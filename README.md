@@ -7,7 +7,8 @@
 📌 Overview
   
     This project is a collection of hands-on exercises I’m completing while learning FastAPI.
-    Each Python file demonstrates a different concept from the course such as routing, path/query parameters, and building small APIs with FastAPI and Uvicorn.
+    Each Python file demonstrates a different concept from the course such as routing,
+    path/query parameters, and building small APIs with FastAPI and Uvicorn.
     
 🧠 What I’m Learning
 
