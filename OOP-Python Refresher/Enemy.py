@@ -35,5 +35,6 @@ class Enemy:
     # ========================================================
     #                   SPECIAL ATTACK (DEFAULT)
     # ========================================================
+
     def special_attack(self):
         print("Enemy has no special attack.")
