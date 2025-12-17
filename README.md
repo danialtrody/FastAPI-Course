@@ -3,6 +3,30 @@
 This repository contains hands-on exercises and backend implementations developed while completing the Udemy course “FastAPI – The Complete Course.”
 It demonstrates modern backend development using FastAPI, including authentication, database integration, async features, and real REST API design.
 
+## 📂 Projects Overview
+
+ This repository is organized into multiple sub-projects, each focusing on a different aspect of backend development with FastAPI and Python.
+
+🔹 OOP-Python Refresher
+
+ A Python refresher project focused on Object-Oriented Programming principles such as classes, inheritance, encapsulation, and abstraction.
+ This module strengthens core Python skills required for writing clean and maintainable backend code.
+
+ 🔹 BasicBooksAPI (CRUD)
+ 
+  A beginner-friendly FastAPI project that introduces core concepts such as routing, HTTP methods, and basic CRUD operations.
+  It serves as a foundation for understanding how FastAPI works before moving to more advanced backend features.
+
+🔹 AdvancedBooksAPI (CRUD)
+
+ An advanced REST API built with FastAPI that demonstrates full CRUD operations combined with authentication, validation, and structured routing.
+ This project focuses on production-style API design, JWT authentication, and clean backend architecture.
+
+🔹 ToDoApp
+
+   A complete ToDo backend application built with FastAPI, SQLAlchemy, and JWT authentication.
+   It includes user registration, login, role-based authorization (admin/user), and full CRUD operations with database persistence.
+
 ## 🎯 Key Objective
 
 The main objective of this repository is to build modern backend knowledge using FastAPI and apply practical skills such as authentication,
