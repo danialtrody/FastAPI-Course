@@ -1,30 +1,48 @@
 # ============================================================
-#                        IMPORTS
+#                           IMPORTS
 # ============================================================
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 
 # ============================================================
-#                 DATABASE CONNECTION URL
+#                    DATABASE CONFIGURATION
 # ============================================================
-SQLALCHEMY_DATABASE_URL = "sqlite:///todosapp.db"
+
+# ------------------------------------------------------------
+# SQLite (local development)
+# ------------------------------------------------------------
+# SQLALCHEMY_DATABASE_URL = "sqlite:///todosapp.db"
+# engine = create_engine(
+#     SQLALCHEMY_DATABASE_URL,
+#     connect_args={"check_same_thread": False}
+# )
+
+# ------------------------------------------------------------
+# PostgreSQL (production / local postgres)
+# ------------------------------------------------------------
+SQLALCHEMY_DATABASE_URL = (
+    "postgresql://postgres:123321@localhost:5432/TodoApplicationDatabase"
+)
 
 
 # ============================================================
-#                        ENGINE SETUP
+#                           ENGINE
 # ============================================================
-engine = create_engine(SQLALCHEMY_DATABASE_URL,connect_args={"check_same_thread": False})
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 
 # ============================================================
-#                  SESSION (DB CONNECTION)
+#                    SESSION (DB CONNECTION)
 # ============================================================
-SessionLocal = sessionmaker(autocommit=False,autoflush=False,bind=engine)
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
 
 # ============================================================
-#                   BASE MODEL FOR TABLES
+#                       BASE MODEL
 # ============================================================
 Base = declarative_base()
