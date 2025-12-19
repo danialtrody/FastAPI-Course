@@ -24,7 +24,7 @@ It demonstrates modern backend development using FastAPI, including authenticati
 
 🔹 ToDoApp
 
-A complete ToDo backend application built with FastAPI, SQLAlchemy, and JWT authentication.
+A complete ToDo full-stack application built with FastAPI, SQLAlchemy, and JWT authentication.
 It includes user registration, login, role-based authorization (admin/user), and full CRUD operations with database persistence.
 Includes comprehensive tests for authentication, user management, and CRUD operations to ensure reliability and correctness.
 
