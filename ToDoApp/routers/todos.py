@@ -2,11 +2,14 @@
 #                           IMPORTS
 # ============================================================
 from typing import Annotated
+from pathlib import Path as SysPath
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from starlette import status
+from starlette.responses import RedirectResponse
 
 from ..database import SessionLocal
 from ..models import ToDos
@@ -14,9 +17,19 @@ from .auth import get_current_user
 
 
 # ============================================================
+#                    TEMPLATE CONFIGURATION
+# ============================================================
+BASE_DIR = SysPath(__file__).resolve().parent.parent
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+
+# ============================================================
 #                     ROUTER CONFIGURATION
 # ============================================================
-router = APIRouter()
+router = APIRouter(
+    prefix="/todos",
+    tags=["todos"],
+)
 
 
 # ============================================================
@@ -50,14 +63,112 @@ class TodoRequest(BaseModel):
                 "author": "danial",
                 "description": "A new description of a todo",
                 "priority": 5,
-                "complete": "false"
+                "complete": False
             }
         }
     }
 
 
 # ============================================================
-#                       TODO ROUTES
+#                        HELPER FUNCTIONS
+# ============================================================
+def redirect_to_login():
+    redirect_response = RedirectResponse(
+        url="/auth/login-page",
+        status_code=status.HTTP_302_FOUND
+    )
+    redirect_response.delete_cookie(key="access_token")
+    return redirect_response
+
+
+# ============================================================
+#                         PAGE ROUTES
+# ============================================================
+@router.get("/todo-page")
+async def render_todo_page(
+    request: Request,
+    db: db_dependency
+):
+    try:
+        user = await get_current_user(
+            request.cookies.get("access_token")
+        )
+
+        if user is None:
+            return redirect_to_login()
+
+        todos = (
+            db.query(ToDos)
+            .filter(ToDos.owner_id == user.get("id"))
+            .all()
+        )
+
+        return templates.TemplateResponse(
+            "todo.html",
+            {
+                "request": request,
+                "todos": todos,
+                "user": user
+            }
+        )
+
+    except Exception:
+        return redirect_to_login()
+
+
+@router.get("/add-todo-page")
+async def render_add_todo_page(request: Request):
+    user = await get_current_user(
+        request.cookies.get("access_token")
+    )
+
+    if user is None:
+        return redirect_to_login()
+
+    return templates.TemplateResponse(
+        "add-todo.html",
+        {
+            "request": request,
+            "user": user
+        }
+    )
+
+
+@router.get("/edit-todo-page/{todo_id}")
+async def render_edit_todo_page(
+    request: Request,
+    todo_id: int,
+    db: db_dependency
+):
+    try:
+        user = await get_current_user(
+            request.cookies.get("access_token")
+        )
+
+        if user is None:
+            return redirect_to_login()
+
+        todo = (
+            db.query(ToDos)
+            .filter(ToDos.id == todo_id)
+            .first()
+        )
+
+        return templates.TemplateResponse(
+            "edit-todo.html",
+            {
+                "request": request,
+                "user": user,
+                "todo": todo
+            }
+        )
+
+    except Exception:
+        return redirect_to_login()
+
+
+# ============================================================
+#                       TODO API ROUTES
 # ============================================================
 
 # ----------------------------

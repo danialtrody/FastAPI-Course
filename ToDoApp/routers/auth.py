@@ -1,11 +1,13 @@
 # ============================================================
 #                           IMPORTS
 # ============================================================
-from datetime import timedelta, datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status
@@ -30,13 +32,20 @@ router = APIRouter(
 # ============================================================
 SECRET_KEY = "e4b9a1f6d8c3a2c9e8f7a4d1b5c0e9f3a8d7c2b1e4f6a9d0c3e8b5f2a1"
 ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 20
 
-bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
+bcrypt_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
+
+oauth2_bearer = OAuth2PasswordBearer(
+    tokenUrl="auth/token"
+)
 
 
 # ============================================================
-#                       SCHEMAS
+#                           SCHEMAS
 # ============================================================
 class CreateUserRequest(BaseModel):
     username: str
@@ -68,14 +77,52 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 
 # ============================================================
+#                    TEMPLATE CONFIGURATION
+# ============================================================
+BASE_DIR = Path(__file__).resolve().parent.parent
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+
+# ============================================================
+#                         PAGE ROUTES
+# ============================================================
+@router.get("/login-page")
+def render_login_page(request: Request):
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request}
+    )
+
+
+@router.get("/register-page")
+def render_register_page(request: Request):
+    return templates.TemplateResponse(
+        "register.html",
+        {"request": request}
+    )
+
+
+# ============================================================
 #                   AUTH HELPER FUNCTIONS
 # ============================================================
-def authenticate_user(username: str, password: str, db):
-    user = db.query(Users).filter(Users.username == username).first()
+def authenticate_user(
+    username: str,
+    password: str,
+    db: Session
+):
+    user = (
+        db.query(Users)
+        .filter(Users.username == username)
+        .first()
+    )
+
     if not user:
         return False
 
-    if not bcrypt_context.verify(password, user.hashed_password):
+    if not bcrypt_context.verify(
+        password,
+        user.hashed_password
+    ):
         return False
 
     return user
@@ -87,21 +134,31 @@ def create_access_token(
     role: str,
     expire_delta: timedelta
 ):
-    encode = {
+    payload = {
         "sub": username,
         "id": user_id,
         "role": role
     }
 
     expires = datetime.now(timezone.utc) + expire_delta
-    encode.update({"exp": expires})
+    payload.update({"exp": expires})
 
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(
+        payload,
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
 
 
-async def get_current_user(token: str = Depends(oauth2_bearer)):
+async def get_current_user(
+    token: str = Depends(oauth2_bearer)
+):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
 
         username: str = payload.get("sub")
         user_id: str = payload.get("id")
@@ -131,27 +188,41 @@ async def get_current_user(token: str = Depends(oauth2_bearer)):
 # ============================================================
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_user(
-    db: db_dependency,
-    create_user_req: CreateUserRequest
+    create_user_req: CreateUserRequest,
+    db: db_dependency
 ):
-    create_user_models = Users(
+    user_model = Users(
         email=create_user_req.email,
         username=create_user_req.username,
         first_name=create_user_req.first_name,
         last_name=create_user_req.last_name,
         role=create_user_req.role,
-        hashed_password=bcrypt_context.hash(create_user_req.password),
+        hashed_password=bcrypt_context.hash(
+            create_user_req.password
+        ),
         is_active=True,
-        phone_number = create_user_req.phone_number
+        phone_number=create_user_req.phone_number
     )
 
-    db.add(create_user_models)
+    db.add(user_model)
     db.commit()
+    db.refresh(user_model)
+
+    return {
+        "message": "User created successfully",
+        "user_id": user_model.id
+    }
 
 
-@router.post("/token", response_model=Token)
+@router.post(
+    "/token",
+    response_model=Token
+)
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: Annotated[
+        OAuth2PasswordRequestForm,
+        Depends()
+    ],
     db: db_dependency
 ):
     user = authenticate_user(
@@ -166,15 +237,15 @@ async def login_for_access_token(
             detail="Could not validate credentials"
         )
 
-    token = create_access_token(
+    access_token = create_access_token(
         user.username,
         user.id,
         user.role,
-        timedelta(minutes=20)
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
     return {
-        "access_token": token,
+        "access_token": access_token,
         "token_type": "bearer"
     }
 
@@ -188,5 +259,6 @@ async def login_for_access_token(
 #   "first_name": "danial",
 #   "last_name": "trody",
 #   "password": "123",
-#   "role": "admin"
+#   "role": "admin",
+#   "phone_number": "0500000000"
 # }

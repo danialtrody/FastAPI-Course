@@ -37,16 +37,26 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 # ============================================================
-#                     ADMIN ROUTES
+#                 AUTHORIZATION VALIDATION
 # ============================================================
-
-@router.get("/todo", status_code=status.HTTP_200_OK)
-async def read_all(user: user_dependency, db: db_dependency):
+def validate_admin(user: dict):
     if user is None or user.get("user_role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication Failed"
         )
+
+
+# ============================================================
+#                     ADMIN ROUTES
+# ============================================================
+
+@router.get("/todo", status_code=status.HTTP_200_OK)
+async def read_all_todos(
+    user: user_dependency,
+    db: db_dependency
+):
+    validate_admin(user)
 
     return db.query(ToDos).all()
 
@@ -60,11 +70,7 @@ async def delete_todo(
     db: db_dependency,
     todo_id: int = Path(gt=0)
 ):
-    if user is None or user.get("user_role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication Failed"
-        )
+    validate_admin(user)
 
     todo_model = (
         db.query(ToDos)
@@ -78,5 +84,9 @@ async def delete_todo(
             detail="ToDo not found"
         )
 
-    db.query(ToDos).filter(ToDos.id == todo_id).delete()
+    (
+        db.query(ToDos)
+        .filter(ToDos.id == todo_id)
+        .delete()
+    )
     db.commit()

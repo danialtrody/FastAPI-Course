@@ -3,13 +3,13 @@
 # ============================================================
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from starlette import status
 
 from ..database import SessionLocal
-from ..models import Users, ToDos
+from ..models import Users
 from .auth import get_current_user, bcrypt_context
 
 
@@ -64,7 +64,7 @@ async def get_user(
 
     return (
         db.query(Users)
-        .filter(user.get("id") == Users.id)
+        .filter(Users.id == user.get("id"))
         .first()
     )
 
@@ -72,7 +72,10 @@ async def get_user(
 # ----------------------------
 # Change user password
 # ----------------------------
-@router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
+@router.put(
+    "/password",
+    status_code=status.HTTP_204_NO_CONTENT
+)
 async def change_password(
     user: user_dependency,
     db: db_dependency,
@@ -85,7 +88,7 @@ async def change_password(
 
     user_model = (
         db.query(Users)
-        .filter(user.get("id") == Users.id)
+        .filter(Users.id == user.get("id"))
         .first()
     )
 
@@ -126,7 +129,7 @@ async def change_phone_number(
 
     user_model = (
         db.query(Users)
-        .filter(user.get("id") == Users.id)
+        .filter(Users.id == user.get("id"))
         .first()
     )
 
