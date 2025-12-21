@@ -4,6 +4,9 @@ Live ToDo App:
 
 [![Live Demo](https://img.shields.io/badge/🌍%20Live%20Demo-Click%20Here-brightgreen?style=for-the-badge)](https://todo-rgv4.onrender.com)
 
+<img width="350" height="350" alt="image" src="https://github.com/user-attachments/assets/2f4a9b9a-708a-4972-962e-a3f667667192" />
+
+
 This repository contains hands-on exercises and backend implementations developed while completing the Udemy course “FastAPI – The Complete Course.”
 It demonstrates modern backend development using FastAPI, including authentication, database integration, async features, and real REST API design.
 
