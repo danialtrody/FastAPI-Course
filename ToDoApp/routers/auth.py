@@ -34,14 +34,9 @@ SECRET_KEY = "e4b9a1f6d8c3a2c9e8f7a4d1b5c0e9f3a8d7c2b1e4f6a9d0c3e8b5f2a1"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 20
 
-bcrypt_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
+bcrypt_context = CryptContext(schemes=["bcrypt"],deprecated="auto")
 
-oauth2_bearer = OAuth2PasswordBearer(
-    tokenUrl="auth/token"
-)
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
 # ============================================================
@@ -88,109 +83,61 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 # ============================================================
 @router.get("/login-page")
 def render_login_page(request: Request):
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("login.html",{"request": request})
 
 
 @router.get("/register-page")
 def render_register_page(request: Request):
-    return templates.TemplateResponse(
-        "register.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("register.html",{"request": request})
 
 
 # ============================================================
 #                   AUTH HELPER FUNCTIONS
 # ============================================================
-def authenticate_user(
-    username: str,
-    password: str,
-    db: Session
-):
-    user = (
-        db.query(Users)
-        .filter(Users.username == username)
-        .first()
-    )
+def authenticate_user(username: str,password: str,db: Session):
+
+    user = (db.query(Users).filter(Users.username == username).first())
 
     if not user:
         return False
 
-    if not bcrypt_context.verify(
-        password,
-        user.hashed_password
-    ):
+    if not bcrypt_context.verify(password,user.hashed_password):
         return False
 
     return user
 
 
-def create_access_token(
-    username: str,
-    user_id: str,
-    role: str,
-    expire_delta: timedelta
-):
-    payload = {
-        "sub": username,
-        "id": user_id,
-        "role": role
-    }
+def create_access_token(username: str,user_id: str, role: str,expire_delta: timedelta):
+    payload = {"sub": username,"id": user_id,"role": role}
 
     expires = datetime.now(timezone.utc) + expire_delta
     payload.update({"exp": expires})
 
-    return jwt.encode(
-        payload,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
+    return jwt.encode(payload,SECRET_KEY,algorithm=ALGORITHM)
 
 
-async def get_current_user(
-    token: str = Depends(oauth2_bearer)
-):
+async def get_current_user(token: str = Depends(oauth2_bearer)):
     try:
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token,SECRET_KEY,algorithms=[ALGORITHM])
 
         username: str = payload.get("sub")
         user_id: str = payload.get("id")
         user_role: str = payload.get("role")
 
         if username is None or user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Could not validate credentials")
 
-        return {
-            "username": username,
-            "id": user_id,
-            "user_role": user_role
-        }
+        return {"username": username,"id": user_id,"user_role": user_role}
 
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Could not validate credentials")
 
 
 # ============================================================
 #                       AUTH ROUTES
 # ============================================================
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_user(
-    create_user_req: CreateUserRequest,
-    db: db_dependency
-):
+async def create_user(create_user_req: CreateUserRequest,db: db_dependency):
     user_model = Users(
         email=create_user_req.email,
         username=create_user_req.username,
@@ -208,46 +155,19 @@ async def create_user(
     db.commit()
     db.refresh(user_model)
 
-    return {
-        "message": "User created successfully",
-        "user_id": user_model.id
-    }
+    return {"message": "User created successfully","user_id": user_model.id }
 
 
-@router.post(
-    "/token",
-    response_model=Token
-)
-async def login_for_access_token(
-    form_data: Annotated[
-        OAuth2PasswordRequestForm,
-        Depends()
-    ],
-    db: db_dependency
-):
-    user = authenticate_user(
-        form_data.username,
-        form_data.password,
-        db
-    )
+@router.post("/token",response_model=Token)
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],db: db_dependency):
+    user = authenticate_user(form_data.username,form_data.password,db)
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Could not validate credentials")
 
-    access_token = create_access_token(
-        user.username,
-        user.id,
-        user.role,
-        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
+    access_token = create_access_token(user.username,user.id,user.role,timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    return {"access_token": access_token,"token_type": "bearer"}
 
 
 # ============================================================

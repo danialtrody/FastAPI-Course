@@ -40,52 +40,26 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 # ============================================================
 def validate_admin(user: dict):
     if user is None or user.get("user_role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication Failed"
-        )
-
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authentication Failed" )
 
 # ============================================================
 #                     ADMIN ROUTES
 # ============================================================
-
 @router.get("/todo", status_code=status.HTTP_200_OK)
-async def read_all_todos(
-    user: user_dependency,
-    db: db_dependency
-):
+async def read_all_todos(user: user_dependency,db: db_dependency):
     validate_admin(user)
 
     return db.query(ToDos).all()
 
 
-@router.delete(
-    "/todo/{todo_id}",
-    status_code=status.HTTP_204_NO_CONTENT
-)
-async def delete_todo(
-    user: user_dependency,
-    db: db_dependency,
-    todo_id: int = Path(gt=0)
-):
+@router.delete("/todo/{todo_id}",status_code=status.HTTP_204_NO_CONTENT)
+async def delete_todo(user: user_dependency,db: db_dependency,todo_id: int = Path(gt=0)):
     validate_admin(user)
 
-    todo_model = (
-        db.query(ToDos)
-        .filter(ToDos.id == todo_id)
-        .first()
-    )
+    todo_model = (db.query(ToDos).filter(ToDos.id == todo_id).first())
 
     if todo_model is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="ToDo not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="ToDo not found")
 
-    (
-        db.query(ToDos)
-        .filter(ToDos.id == todo_id)
-        .delete()
-    )
+    db.query(ToDos).filter(ToDos.id == todo_id).delete()
     db.commit()

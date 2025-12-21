@@ -73,10 +73,7 @@ class TodoRequest(BaseModel):
 #                        HELPER FUNCTIONS
 # ============================================================
 def redirect_to_login():
-    redirect_response = RedirectResponse(
-        url="/auth/login-page",
-        status_code=status.HTTP_302_FOUND
-    )
+    redirect_response = RedirectResponse(url="/auth/login-page",status_code=status.HTTP_302_FOUND)
     redirect_response.delete_cookie(key="access_token")
     return redirect_response
 
@@ -85,32 +82,16 @@ def redirect_to_login():
 #                         PAGE ROUTES
 # ============================================================
 @router.get("/todo-page")
-async def render_todo_page(
-    request: Request,
-    db: db_dependency
-):
+async def render_todo_page(request: Request,db: db_dependency):
     try:
-        user = await get_current_user(
-            request.cookies.get("access_token")
-        )
+        user = await get_current_user(request.cookies.get("access_token"))
 
         if user is None:
             return redirect_to_login()
 
-        todos = (
-            db.query(ToDos)
-            .filter(ToDos.owner_id == user.get("id"))
-            .all()
-        )
+        todos = db.query(ToDos).filter(ToDos.owner_id == user.get("id")).all()
 
-        return templates.TemplateResponse(
-            "todo.html",
-            {
-                "request": request,
-                "todos": todos,
-                "user": user
-            }
-        )
+        return templates.TemplateResponse("todo.html",{"request": request,"todos": todos,"user": user})
 
     except Exception:
         return redirect_to_login()
@@ -118,50 +99,25 @@ async def render_todo_page(
 
 @router.get("/add-todo-page")
 async def render_add_todo_page(request: Request):
-    user = await get_current_user(
-        request.cookies.get("access_token")
-    )
+    user = await get_current_user(request.cookies.get("access_token"))
 
     if user is None:
         return redirect_to_login()
 
-    return templates.TemplateResponse(
-        "add-todo.html",
-        {
-            "request": request,
-            "user": user
-        }
-    )
+    return templates.TemplateResponse("add-todo.html",{"request": request,"user": user})
 
 
 @router.get("/edit-todo-page/{todo_id}")
-async def render_edit_todo_page(
-    request: Request,
-    todo_id: int,
-    db: db_dependency
-):
+async def render_edit_todo_page(request: Request,todo_id: int,db: db_dependency):
     try:
-        user = await get_current_user(
-            request.cookies.get("access_token")
-        )
+        user = await get_current_user(request.cookies.get("access_token"))
 
         if user is None:
             return redirect_to_login()
 
-        todo = (
-            db.query(ToDos)
-            .filter(ToDos.id == todo_id)
-            .first()
-        )
+        todo = (db.query(ToDos).filter(ToDos.id == todo_id).first())
 
-        return templates.TemplateResponse(
-            "edit-todo.html",
-            {
-                "request": request,
-                "user": user,
-                "todo": todo
-            }
-        )
+        return templates.TemplateResponse("edit-todo.html",{"request": request,"user": user,"todo": todo})
 
     except Exception:
         return redirect_to_login()
@@ -175,50 +131,26 @@ async def render_edit_todo_page(
 # Get all todos for user
 # ----------------------------
 @router.get("/", status_code=status.HTTP_200_OK)
-async def read_all(
-    user: user_dependency,
-    db: db_dependency
-):
+async def read_all(user: user_dependency,db: db_dependency):
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization Failed"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authorization Failed")
 
-    return (
-        db.query(ToDos)
-        .filter(ToDos.owner_id == user.get("id"))
-        .all()
-    )
+    return db.query(ToDos).filter(ToDos.owner_id == user.get("id")).all()
+
 
 
 # ----------------------------
 # Get single todo
 # ----------------------------
 @router.get("/todo/{todo_id}", status_code=status.HTTP_200_OK)
-async def read_todo(
-    user: user_dependency,
-    db: db_dependency,
-    todo_id: int = Path(gt=0)
-):
+async def read_todo(user: user_dependency,db: db_dependency,todo_id: int = Path(gt=0)):
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization Failed"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authorization Failed")
 
-    todo_model = (
-        db.query(ToDos)
-        .filter(ToDos.id == todo_id)
-        .filter(ToDos.owner_id == user.get("id"))
-        .first()
-    )
+    todo_model = db.query(ToDos).filter(ToDos.id == todo_id).filter(ToDos.owner_id == user.get("id")).first()
 
     if todo_model is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="ToDo not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="ToDo not found")
 
     return todo_model
 
@@ -227,21 +159,11 @@ async def read_todo(
 # Create todo
 # ----------------------------
 @router.post("/todo", status_code=status.HTTP_201_CREATED)
-async def create_todo(
-    user: user_dependency,
-    db: db_dependency,
-    todo_request: TodoRequest
-):
+async def create_todo(user: user_dependency,db: db_dependency,todo_request: TodoRequest):
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization Failed"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authorization Failed")
 
-    todo_model = ToDos(
-        **todo_request.dict(),
-        owner_id=user.get("id")
-    )
+    todo_model = ToDos(**todo_request.dict(),owner_id=user.get("id"))
 
     db.add(todo_model)
     db.commit()
@@ -251,30 +173,15 @@ async def create_todo(
 # Update todo
 # ----------------------------
 @router.put("/todo/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def update_todo(
-    user: user_dependency,
-    db: db_dependency,
-    todo_request: TodoRequest,
-    todo_id: int = Path(gt=0)
-):
+async def update_todo(user: user_dependency,db: db_dependency,todo_request: TodoRequest,todo_id: int = Path(gt=0)):
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization Failed"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authorization Failed")
 
-    todo_model = (
-        db.query(ToDos)
-        .filter(ToDos.id == todo_id)
-        .filter(ToDos.owner_id == user.get("id"))
-        .first()
-    )
+    todo_model = db.query(ToDos).filter(ToDos.id == todo_id).filter(ToDos.owner_id == user.get("id")).first()
+
 
     if todo_model is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="ToDo not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="ToDo not found")
 
     todo_model.title = todo_request.title
     todo_model.description = todo_request.description
@@ -289,35 +196,16 @@ async def update_todo(
 # Delete todo
 # ----------------------------
 @router.delete("/todo/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_todo(
-    user: user_dependency,
-    db: db_dependency,
-    todo_id: int = Path(gt=0)
-):
+async def delete_todo(user: user_dependency,db: db_dependency,todo_id: int = Path(gt=0)):
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization Failed"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authorization Failed")
 
-    todo_model = (
-        db.query(ToDos)
-        .filter(ToDos.id == todo_id)
-        .filter(ToDos.owner_id == user.get("id"))
-        .first()
-    )
+    todo_model = db.query(ToDos).filter(ToDos.id == todo_id).filter(ToDos.owner_id == user.get("id")).first()
+
 
     if todo_model is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="ToDo not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="ToDo not found")
 
-    (
-        db.query(ToDos)
-        .filter(ToDos.id == todo_id)
-        .filter(ToDos.owner_id == user.get("id"))
-        .delete()
-    )
+    db.query(ToDos).filter(ToDos.id == todo_id).filter(ToDos.owner_id == user.get("id")).delete()
 
     db.commit()

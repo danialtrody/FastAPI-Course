@@ -30,26 +30,17 @@ Base.metadata.create_all(bind=engine)
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 
-templates = Jinja2Templates(
-    directory=BASE_DIR / "templates"
-)
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
-app.mount(
-    "/static",
-    StaticFiles(directory=BASE_DIR / "static"),
-    name="static"
-)
+app.mount("/static",StaticFiles(directory=BASE_DIR / "static"),name="static")
 
 
 # ============================================================
 #                    ROOT & HEALTH ROUTES
 # ============================================================
 @app.get("/")
-def root(request: Request):
-    return RedirectResponse(
-        url="/todos/todo-page",
-        status_code=status.HTTP_302_FOUND
-    )
+def root():
+    return RedirectResponse(url="/todos/todo-page",status_code=status.HTTP_302_FOUND)
 
 
 @app.get("/healthy")
