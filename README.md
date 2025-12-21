@@ -1,5 +1,9 @@
 # 📚 FastAPI Practice – Udemy Course
 
+Live ToDo App:
+
+[![Live Demo](https://img.shields.io/badge/🌍%20Live%20Demo-Click%20Here-brightgreen?style=for-the-badge)](https://todo-rgv4.onrender.com)
+
 This repository contains hands-on exercises and backend implementations developed while completing the Udemy course “FastAPI – The Complete Course.”
 It demonstrates modern backend development using FastAPI, including authentication, database integration, async features, and real REST API design.
 
