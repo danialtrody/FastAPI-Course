@@ -11,9 +11,9 @@ from sqlalchemy.orm import Session
 from starlette import status
 from starlette.responses import RedirectResponse
 
-from database import SessionLocal
-from models import ToDos
-from auth import get_current_user
+from ToDoApp.database import SessionLocal
+from ToDoApp.models import ToDos
+from ToDoApp.routers.auth import get_current_user
 
 
 # ============================================================

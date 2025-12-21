@@ -2,7 +2,8 @@
 #                           IMPORTS
 # ============================================================
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
-from database import Base
+
+from ToDoApp.database import Base
 
 
 # ============================================================
